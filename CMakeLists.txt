@@ -25,7 +25,7 @@ get_target_property(ZXING_INCLUDES ZXing::ZXing INTERFACE_INCLUDE_DIRECTORIES)
 message(STATUS "ZXing include path = ${ZXING_INCLUDES}")
 file(GLOB SOURCES "src/*.cpp")
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} WIN32 ${SOURCES} "logo.rc")
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${ZXING_INCLUDES})
 
