@@ -5,9 +5,37 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/detached.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <nlohmann/json.hpp>
 #include <vector>
 #include <string>
-#include <QMessageBox>
+#include <fstream>
+
+using json = nlohmann::json;
+
+struct MqttConfig {
+    std::string host;
+    uint16_t port;
+    std::string client_id;
+};
+
+// 读取 JSON 配置文件并解析
+static MqttConfig load_config(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Unable to open config file!" << std::endl;
+        exit(1);  // 打开失败，直接退出
+    }
+
+    json config_json;
+    file >> config_json;  // 解析 JSON 文件
+
+    MqttConfig config;
+    config.host = config_json["mqtt"]["host"];
+    config.port = config_json["mqtt"]["port"];
+    config.client_id = config_json["mqtt"]["client_id"];
+
+    return config;
+}
 
 class MqttSubscriber {
 public:
@@ -36,7 +64,7 @@ public:
 
 
         boost::mqtt5::subscribe_topic sub_topic(topic);
-
+        
         // 订阅主题
         client_.async_subscribe(
             sub_topic,

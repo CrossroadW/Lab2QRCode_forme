@@ -137,7 +137,9 @@ BarcodeWidget::BarcodeWidget(QWidget* parent)
 
     mainLayout->addLayout(sizeLayout);
 
-    subscriber_ = std::make_unique<MqttSubscriber>("47.100.34.19", 1883, "boost_simple_subscriber",
+    MqttConfig config = load_config("./setting/config.json");
+
+    subscriber_ = std::make_unique<MqttSubscriber>(config.host, config.port, config.client_id,
         [this](const std::string& topic, const std::string& payload){
             emit mqttMessageReceived(QString::fromStdString(topic),
                 QString::fromStdString(payload));
