@@ -137,7 +137,7 @@ BarcodeWidget::BarcodeWidget(QWidget* parent)
 
     mainLayout->addLayout(sizeLayout);
 
-    MqttConfig config = load_config("./setting/config.json");
+    MqttConfig config = MqttSubscriber::load_config("./setting/config.json");
 
     subscriber_ = std::make_unique<MqttSubscriber>(config.host, config.port, config.client_id,
         [this](const std::string& topic, const std::string& payload){
