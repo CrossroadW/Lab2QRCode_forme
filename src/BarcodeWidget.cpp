@@ -10,6 +10,8 @@
 #include <QScrollArea>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QMenuBar>
+#include <QMenu>
 #include <opencv2/opencv.hpp>
 #include <ZXing/BarcodeFormat.h>
 #include <ZXing/BitMatrix.h>
@@ -36,12 +38,26 @@ QImage BarcodeWidget::MatToQImage(const cv::Mat& mat) const
 BarcodeWidget::BarcodeWidget(QWidget* parent)
     : QWidget(parent)
 {
-    setWindowTitle("Binary to QRCode Generator");
-    setMinimumSize(500, 500);
+    setWindowTitle("Lab2QRCode");
+    setMinimumSize(500, 600);
+
+    QMenuBar* menuBar = new QMenuBar(this);
+    QMenu* helpMenu = menuBar->addMenu("帮助");
+
+    QFont menuFont("SimHei", 12);  // 可商用字体
+    menuBar->setFont(menuFont);
+
+    QAction* aboutAction = new QAction("关于软件", this);
+    aboutAction->setFont(menuFont);
+    helpMenu->addAction(aboutAction);
+
+    // 连接菜单项的点击信号
+    connect(aboutAction, &QAction::triggered, this, &BarcodeWidget::showAbout);
+
 
     auto* mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(20);  // 调整控件之间的间距
-    mainLayout->setContentsMargins(30, 20, 30, 20);  // 设置内边距
+    mainLayout->setSpacing(15);  // 调整控件之间的间距
+    mainLayout->setContentsMargins(30, 20, 30, 20);
 
     auto* fileLayout = new QHBoxLayout();
     filePathEdit = new QLineEdit(this);
@@ -112,7 +128,7 @@ BarcodeWidget::BarcodeWidget(QWidget* parent)
     }
 
     QLabel* formatLabel = new QLabel("选择条码类型:", this);
-    formatLabel->setFont(QFont("Consolas", 12));
+    formatLabel->setFont(QFont("Consolas", 14));
     comboBoxLayout->addWidget(formatLabel);
     comboBoxLayout->addWidget(formatComboBox);
     mainLayout->addLayout(comboBoxLayout);
@@ -122,13 +138,13 @@ BarcodeWidget::BarcodeWidget(QWidget* parent)
     QLabel* widthLabel = new QLabel("宽度:", this);
     widthInput = new QLineEdit(this);
     widthInput->setText("300");  // 默认宽度
-    widthInput->setFont(QFont("Arial", 12));
+    widthInput->setFont(QFont("Consolas", 13));
     widthInput->setStyleSheet("QLineEdit { border: 1px solid #ccc; border-radius: 5px; padding: 5px; background-color: #f9f9f9; }");
 
     QLabel* heightLabel = new QLabel("高度:", this);
     heightInput = new QLineEdit(this);
     heightInput->setText("300");  // 默认高度
-    heightInput->setFont(QFont("Arial", 12));
+    heightInput->setFont(QFont("Consolas", 13));
     heightInput->setStyleSheet("QLineEdit { border: 1px solid #ccc; border-radius: 5px; padding: 5px; background-color: #f9f9f9; }");
 
     sizeLayout->addWidget(widthLabel);
@@ -147,7 +163,6 @@ BarcodeWidget::BarcodeWidget(QWidget* parent)
         });
     subscriber_->subscribe("test/topic");
 
-    // 连接信号与槽
     connect(browseButton, &QPushButton::clicked, this, &BarcodeWidget::onBrowseFile);
     connect(generateButton, &QPushButton::clicked, this, &BarcodeWidget::onGenerateClicked);
     connect(decodeToChemFile, &QPushButton::clicked, this, &BarcodeWidget::onDecodeToChemFileClicked);
@@ -468,4 +483,9 @@ cv::Mat BarcodeWidget::loadImageFromFile(const QString& filePath) {
     }
 
     return img;
+}
+
+void BarcodeWidget::showAbout() {
+    // todo.. 后续修改，弹出对话框，版本信息等需要 cmake build 时调用脚本生成 cpp 文件得到，设置
+    QMessageBox::information(this, "软件信息", "Lab2QRCode - 版本 v1.8\n一个工具，用于生成和解码条码。");
 }
