@@ -28,7 +28,7 @@ if(MSVC)
     add_compile_options(/EHsc /utf-8 /bigobj)
 endif()
 
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets Concurrent)
 find_package(Threads REQUIRED)
 find_package(ZXing REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -57,6 +57,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${ZXING_INCLUDES})
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     Qt5::Core
     Qt5::Widgets
+    Qt5::Concurrent
     ZXing::ZXing
     ${OpenCV_LIBS}
     Boost::headers

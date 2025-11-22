@@ -12,6 +12,8 @@
 #include <QComboBox>
 #include <QMenuBar>
 #include <QMenu>
+#include <QtConcurrent>
+#include <QFutureWatcher>
 #include <opencv2/opencv.hpp>
 #include <ZXing/BarcodeFormat.h>
 #include <ZXing/BitMatrix.h>
@@ -365,6 +367,44 @@ void BarcodeWidget::onSaveClicked()
     const QFileInfo fileInfo(filePath);
     const QString suffix = fileInfo.suffix().toLower();
 
+    const auto saveFile = [this](const QString& savePath) {
+        QFutureWatcher<bool>* watcher = new QFutureWatcher<bool>(this);
+        connect(watcher, &QFutureWatcher<bool>::finished, [this, savePath, watcher] {
+            if (watcher->result()) {
+                QMessageBox::information(this, "保存", QString("文件保存成功 %1").arg(savePath));
+            }else {
+                QMessageBox::warning(this, "错误", "无法保存文件.");
+            }
+            watcher->deleteLater();
+        });
+        const QFuture<bool> future = QtConcurrent::run([this, savePath]{
+            QFile outputFile(savePath);
+            if (outputFile.open(QIODevice::WriteOnly)) {
+                const qint64 bytesWritten = outputFile.write(lastDecodedData);
+                outputFile.close();
+                return (bytesWritten == lastDecodedData.size());
+            }
+            return false;
+        });
+        watcher->setFuture(future);
+    };
+
+    const auto saveImage = [this](const QString& fileName) {
+        QFutureWatcher<bool>* watcher = new QFutureWatcher<bool>(this);
+        connect(watcher, &QFutureWatcher<bool>::finished, [this, fileName, watcher] {
+            if (watcher->result()) {
+                QMessageBox::information(this, "保存", QString("图片保存成功 %1").arg(fileName));
+            } else {
+                QMessageBox::warning(this, "错误", "无法保存图片.");
+            }
+            watcher->deleteLater();
+        });
+        const QFuture<bool> future = QtConcurrent::run([this, fileName] {
+            return lastImage.save(fileName);
+        });
+        watcher->setFuture(future);
+    };
+
     if (suffix == "png") {
         // 如果是PNG图片，保存解码后的文件
         if (lastDecodedData.isEmpty()) {
@@ -375,21 +415,12 @@ void BarcodeWidget::onSaveClicked()
         const QString defaultName = fileInfo.completeBaseName() + ".rfa";
         const QString savePath = QFileDialog::getSaveFileName(this, "保存文件",
             fileInfo.dir().filePath(defaultName),
-            "RFA Files (*.rfa)");
+            "Binary Files (*.rfa);;Text Files (*.txt)");
 
         if (!savePath.isEmpty()) {
-            QFile outputFile(savePath);
-            if (outputFile.open(QIODevice::WriteOnly)) {
-                outputFile.write(lastDecodedData);
-                outputFile.close();
-                QMessageBox::information(this, "成功", QString("文件已保存至:\n%1").arg(savePath));
-            }
-            else {
-                QMessageBox::critical(this, "错误", "无法保存文件。");
-            }
+            saveFile(savePath);
         }
-    }
-    else {
+    }else {
         // 如果是其他文件（普通文件），保存图片
         if (lastImage.isNull()) {
             QMessageBox::warning(this, "警告", "没有图片可保存。");
@@ -401,10 +432,7 @@ void BarcodeWidget::onSaveClicked()
             fileNameWithoutExtension + ".png", "PNG Images (*.png)");
 
         if (!fileName.isEmpty()) {
-            if (lastImage.save(fileName))
-                QMessageBox::information(this, "保存", QString("图片保存成功 %1").arg(fileName));
-            else
-                QMessageBox::warning(this, "错误", "无法保存图片.");
+            saveImage(fileName);
         }
     }
 }
