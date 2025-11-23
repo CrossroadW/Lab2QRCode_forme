@@ -137,6 +137,14 @@ private:
     QFileDialog*                    fileDialog;                                          /**< 文件选择弹窗    */
     std::unique_ptr<MqttSubscriber> subscriber_;                                         /**< MQTT 订阅者实例  */
 
+    /**
+    * @brief 渲染并显示解码结果
+    */
     void renderResults() const;
+
+    /**
+    * @brief 批处理完成回调函数
+    * @param watcher 异步任务监视器
+    */
     void onBatchFinish(QFutureWatcher<convert::result_data_entry>& watcher);
 };

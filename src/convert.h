@@ -69,41 +69,41 @@ namespace convert{
         }
     };
 
-	struct QRcode_create_config{
-		int target_width = 300;
-		int target_height = 300;
-		ZXing::BarcodeFormat format = ZXing::BarcodeFormat::QRCode;
-		int margin = 1;
-	};
+    struct QRcode_create_config{
+        int target_width = 300;
+        int target_height = 300;
+        ZXing::BarcodeFormat format = ZXing::BarcodeFormat::QRCode;
+        int margin = 1;
+    };
 
-	[[nodiscard]] inline QImage byte_to_QRCode_qimage(const std::string& text, const QRcode_create_config qrcode_config){
-		ZXing::MultiFormatWriter writer(qrcode_config.format);
-		writer.setMargin(qrcode_config.margin);
+    [[nodiscard]] inline QImage byte_to_QRCode_qimage(const std::string& text, const QRcode_create_config qrcode_config){
+        ZXing::MultiFormatWriter writer(qrcode_config.format);
+        writer.setMargin(qrcode_config.margin);
 
-		const auto bitMatrix = writer.encode(text, qrcode_config.target_width, qrcode_config.target_height);
-		const auto width = bitMatrix.width();
-		const auto height = bitMatrix.height();
+        const auto bitMatrix = writer.encode(text, qrcode_config.target_width, qrcode_config.target_height);
+        const auto width = bitMatrix.width();
+        const auto height = bitMatrix.height();
 
-		QImage image(width, height, QImage::Format_Grayscale8);
+        QImage image(width, height, QImage::Format_Grayscale8);
 
-		for (int y = 0; y < height; ++y) {
-			uchar* line = image.scanLine(y);
-			for (int x = 0; x < width; ++x) {
-				line[x] = bitMatrix.get(x, y) ? 0x00 : std::numeric_limits<uchar>::max();
-			}
-		}
+        for (int y = 0; y < height; ++y) {
+            uchar* line = image.scanLine(y);
+            for (int x = 0; x < width; ++x) {
+                line[x] = bitMatrix.get(x, y) ? 0x00 : std::numeric_limits<uchar>::max();
+            }
+        }
 
-		return image;
-	}
+        return image;
+    }
 
     struct result_i2t { //image to text result, 傻瓜式expected
-	    enum errcode{
-	        success,
-	        empty_img,
-	        invalid_qrcode
-	    };
-	    std::string text{};
-	    errcode err{};
+        enum errcode{
+            success,
+            empty_img,
+            invalid_qrcode
+        };
+        std::string text{};
+        errcode err{};
 
         [[nodiscard]] explicit(false) result_i2t(const std::string& text) : text(text) {}
 
@@ -112,29 +112,29 @@ namespace convert{
         [[nodiscard]] explicit(false) result_i2t(errcode err) : err(err) {}
 
         explicit operator bool() const noexcept
-	    {
-	        return !err;
-	    }
-	};
+        {
+            return !err;
+        }
+    };
 
-	[[nodiscard]] inline result_i2t QRcode_to_byte(const std::string& bytes){
-	    cv::Mat img = cv::imread(bytes, cv::IMREAD_COLOR);
-	    if (img.empty()) {
-	        return result_i2t::empty_img;
-	    }
+    [[nodiscard]] inline result_i2t QRcode_to_byte(const std::string& bytes){
+        cv::Mat img = cv::imread(bytes, cv::IMREAD_COLOR);
+        if (img.empty()) {
+            return result_i2t::empty_img;
+        }
 
-	    cv::Mat grayImg;
-	    cv::cvtColor(img, grayImg, cv::COLOR_BGR2GRAY);
+        cv::Mat grayImg;
+        cv::cvtColor(img, grayImg, cv::COLOR_BGR2GRAY);
 
-	    const ZXing::ImageView imageView(grayImg.data, grayImg.cols, grayImg.rows, ZXing::ImageFormat::Lum);
-	    const auto result = ZXing::ReadBarcode(imageView);
+        const ZXing::ImageView imageView(grayImg.data, grayImg.cols, grayImg.rows, ZXing::ImageFormat::Lum);
+        const auto result = ZXing::ReadBarcode(imageView);
 
-	    if (!result.isValid()) {
-	        return result_i2t::invalid_qrcode;
-	    }
+        if (!result.isValid()) {
+            return result_i2t::invalid_qrcode;
+        }
 
-	    return result.text();
-	}
+        return result.text();
+    }
 
 }
 

@@ -510,11 +510,13 @@ void BarcodeWidget::onGenerateClicked() {
 
     auto* watcher = new QFutureWatcher<convert::result_data_entry>(this);
 
-    connect(watcher, &QFutureWatcher<convert::result_data_entry>::progressValueChanged, progressBar,
-        &QProgressBar::setValue);
+    connect(watcher, &QFutureWatcher<convert::result_data_entry>::progressValueChanged, progressBar, &QProgressBar::setValue);
 
-    connect(
-        watcher, &QFutureWatcher<convert::result_data_entry>::finished, [this, watcher]() { onBatchFinish(*watcher); });
+    connect(watcher, &QFutureWatcher<convert::result_data_entry>::finished, 
+        [this, watcher] {
+            onBatchFinish(*watcher);
+        }
+    );
 
     watcher->setFuture(QtConcurrent::mapped(filePaths, worker{reqWidth, reqHeight, useBase64, format}));
 }
