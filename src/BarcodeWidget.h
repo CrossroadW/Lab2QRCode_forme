@@ -20,8 +20,8 @@ class QComboBox;
 class QFileDialog;
 class QProgressBar;
 class QMenuBar;
-
 class ElaContentDialog;
+
 /**
  * @class BarcodeWidget
  * @brief 该类用于实现 条码图片生成和解析功能的窗口。

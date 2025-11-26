@@ -35,13 +35,14 @@ jobs:
         uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
           arch: x64
+          toolset: 14.44
 
       - name: Install Qt (Windows)
         uses: jurplel/install-qt-action@v4
         with:
-          version: "5.12.12"
+          version: "5.15.2"
           target: "desktop"
-          arch: "win64_msvc2017_64"
+          arch: "win64_msvc2019_64"
           install-deps: true
           dir: ${{ github.workspace }}/Qt
 
@@ -94,7 +95,15 @@ jobs:
           cmake -S ../spdlog -B ../spdlog/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPDLOG_BUILD_EXAMPLE=OFF -DSPDLOG_BUILD_TESTS=OFF SPDLOG_BUILD_SHARED=OFF
           cmake --build ../spdlog/build --config Release
           cmake --install ../spdlog/build --prefix "${{ github.workspace }}/deps"
+          # 下载 ElaWidgetTools 预编译库
+          $elaUrl = "https://github.com/CrossroadW/prebuild_windows_msvc/releases/download/v1.0/ElaWidgetTools.7z"
+          $elaArchive = "../ElaWidgetTools.7z"
+          $elaExtractDir = "./deps/"
+          # 下载
+          Invoke-WebRequest -Uri $elaUrl -OutFile $elaArchive
 
+          # 解压到 deps 目录
+          7z x $elaArchive "-o${elaExtractDir}" -y
 
         # ---------- Configure ----------
       - name: Configure CMake And Build Project
@@ -136,12 +145,15 @@ jobs:
 
           # 🆕 手动复制 OpenCV DLL 到发布目录
           $opencvDll = ".\deps\OpenCV\opencv_world4120.dll"
+          $elawidgetdll = ".\deps\ElaWidgetTools\bin\ElaWidgetTools.dll"
           if (Test-Path $opencvDll) {
               Copy-Item $opencvDll -Destination "${{ env.release_dir }}" -Force
+               Copy-Item $elawidgetdll -Destination "${{ env.release_dir }}" -Force
               Write-Host "✅ 已复制 OpenCV DLL 到发布目录"
           } else {
               Write-Warning "未找到 OpenCV DLL: $opencvDll"
           }
+
 
           Write-Host "📦 压缩目录: ${{ env.release_dir }}"
           if (Test-Path "${{ env.release_zip }}") {
@@ -196,15 +208,20 @@ jobs:
           cmake -S zxing-cpp -B zxing-cpp/build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=OFF
-          sudo cmake --build zxing-cpp/build --parallel
+          cmake --build zxing-cpp/build --parallel
           sudo cmake --install zxing-cpp/build --prefix /usr/local
+          git clone --depth 1 https://github.com/Liniyous/ElaWidgetTools -b d755a7558ee957ccee3554482d5ded9040354d81
+          cmake -S ElaWidgetTools -B ElaWidgetTools/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build ElaWidgetTools/build --parallel
+          cmake --install ElaWidgetTools/build --prefix ElaWidgetTools/install 
+
 
       # ---- Configure and Build Project ----
       - name: Configure and build project
         shell: pwsh
         run: |
           # 配置 CMake
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DElaWidgetTools_DIR="ElaWidgetTools/install/ElaWidgetTools/lib/cmake"
 
           # 构建项目
           cmake --build build --parallel
