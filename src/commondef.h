@@ -14,8 +14,7 @@ class CameraVideoSurface;
 class QCheckBox;
 
 struct FrameResult {
-    QImage frame;
     QString type;
     QString content;
-    QRect box; // 新增，保存二维码在图像中的位置
+    QVector<QPoint> points; // 存放二维码四个角点，顺序固定 TL, TR, BR, BL
 };

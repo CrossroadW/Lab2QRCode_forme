@@ -17,6 +17,7 @@
 #include <QSharedPointer>
 #include <QtConcurrent>
 #include <QFutureWatcher>
+#include <memory>
 #include <spdlog/spdlog.h>
 
 #include "FrameWidget.h"
@@ -46,10 +47,10 @@ public:
 
         // Copy is required because the QVideoFrame-backed memory will be unmapped.
         QImage img(clone.bits(), clone.width(), clone.height(), clone.bytesPerLine(), qfmt);
-        QSharedPointer<QImage> sharedImg(new QImage(img.copy()));
+
         clone.unmap();
 
-        emit frameReady(sharedImg);
+        emit frameReady(img);
         return true;
     }
 
@@ -63,7 +64,8 @@ public:
     }
 
 signals:
-    void frameReady(QSharedPointer<QImage> img);
+    void frameReady(const QImage& img);
+
 };
 
 // ----------------------
@@ -84,11 +86,12 @@ protected:
 
 private slots:
     void onCameraIndexChanged(int index);
-    void onFrameReady(QSharedPointer<QImage> img);
+    void onFrameReady(const QImage& img);
+
     void onScanFinished();
 
 private:
-    FrameResult processFrameSync(const QImage& img);
+    FrameResult processFrameSync(QImage img);
     ZXing::ImageView ImageViewFromQImage(const QImage &img);
 
 private:
@@ -115,7 +118,7 @@ private:
 
     // concurrency
     QFutureWatcher<FrameResult>* watcher = nullptr;
-    QSharedPointer<QImage> currentDisplayedImage;
+    QImage currentDisplayedImage;
 
     bool autoScrollToBottom = true;  // 默认自动滚动
     QCheckBox *autoScrollCheckBox;

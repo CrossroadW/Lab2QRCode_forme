@@ -297,8 +297,22 @@ ZXing::ImageView CameraWidget::ImageViewFromQImage(const QImage &img) {
     return {img.constBits(), img.width(), img.height(), fmt, static_cast<int>(img.bytesPerLine())};
 }
 
-// 同步执行 ZXing 解析（在工作线程中运行）
-FrameResult CameraWidget::processFrameSync(const QImage& img) {
+void CameraWidget::onFrameReady(const QImage& img) {
+    if (img.isNull()) return;
+    currentDisplayedImage = img;
+
+    QImage flipped = currentDisplayedImage.mirrored(flipX, flipY);
+    frameWidget->setFrame(flipped);
+
+    if (watcher->isRunning()) return;
+
+    auto future = QtConcurrent::run([this, flipped ]() mutable -> FrameResult {
+        return processFrameSync(flipped);
+    });
+    watcher->setFuture(future);
+}
+
+FrameResult CameraWidget::processFrameSync(QImage img) {
     FrameResult out;
     if (!isEnabledScan) return out;
 
@@ -314,43 +328,25 @@ FrameResult CameraWidget::processFrameSync(const QImage& img) {
         out.type = QString::fromStdString(ZXing::ToString(bc.format()));
         out.content = QString::fromStdString(bc.text());
 
+        // 保存四个点
+        auto pos = bc.position();
+        out.points.push_back(QPoint(pos[0].x, pos[0].y)); // TL
+        out.points.push_back(QPoint(pos[1].x, pos[1].y)); // TR
+        out.points.push_back(QPoint(pos[2].x, pos[2].y)); // BR
+        out.points.push_back(QPoint(pos[3].x, pos[3].y)); // BL
 
-        // 为了不修改传入的 QImage（它可能在 UI 线程被共享），我们将结果中的 box 信息返回，
-        // UI 线程负责在显示时绘制标注。
-        // 这里我们也可以把位置信息放到 out（示例略）。
-        break; // 目前只取第一个匹配
+        break; // 只取第一个匹配
     }
 
     return out;
 }
 
-// 当 video surface 有新帧时：
-void CameraWidget::onFrameReady(QSharedPointer<QImage> img) {
-    // 快速显示最新帧（UI 线程）
-    if (!img) return;
-    currentDisplayedImage = img;
-        // Y-axis flip
-    QImage flipped = img->mirrored(flipX, flipY);
-    frameWidget->setFrame(flipped);
 
-    // 异步扫码：如果上一个任务还没完成，可以选择取消或丢弃，这里我们丢弃新任务直到上一个完成
-    if (watcher->isRunning()) {
-        // 丢弃扫描任务，保持显示流畅
-        return;
-    }
-
-    // 提交给线程池去做耗时的 ZXing 解析
-    QSharedPointer<QImage> imgForScan = img; // share pointer
-    auto future = QtConcurrent::run([this, imgForScan]() -> FrameResult {
-        return processFrameSync(*imgForScan);
-    });
-    watcher->setFuture(future);
-}
 
 // 当异步解析完成，回到主线程更新 UI
 void CameraWidget::onScanFinished() {
     FrameResult r = watcher->result();
-
+    frameWidget->setBarcodeResult(r);
     if (r.type.isEmpty() && r.content.isEmpty()) {
         // nothing
         return;

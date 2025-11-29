@@ -11,9 +11,7 @@ public:
 void setFrame(const QImage& frame);           // 设置视频帧
 void setBarcodeResult(const FrameResult& r);  // 设置二维码信息
     
-    // 清空画面
     void clear();
-
 protected:
     void paintEvent(QPaintEvent *event) override;
 
