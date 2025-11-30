@@ -88,16 +88,25 @@ CameraWidget::CameraWidget(QWidget *parent) : QWidget(parent) {
         QAction *action = new QAction(camInfo.description(), this);
         action->setData(i);
         action->setCheckable(true);  // 设置为可选中
-
+        
         cameraMenu->addAction(action);
         cameraActionGroup->addAction(action);
 
         QCamera *cam = new QCamera(camInfo, this);
         cam->setCaptureMode(QCamera::CaptureVideo);
-        // 不在此创建 QCameraImageCapture，使用 video surface
+        action->setEnabled(cam->isAvailable());
         camerasList.push_back(cam);
-
-        connect(action, &QAction::triggered, this, [this, i]() { onCameraIndexChanged(i); });
+        connect(cam,&QCamera::stateChanged,this,[action](QCamera::State state){
+            if(state == QCamera::State::ActiveState) {
+                action->setEnabled(true);action->setChecked(true);
+            }else if(state == QCamera::State::LoadedState){
+                action->setEnabled(true);
+            }else{
+                action->setEnabled(false);
+            }
+        });
+        connect(action, &QAction::triggered, this, [this, i](bool checked) { 
+            onCameraIndexChanged(i); });
     }
       // 如果没有摄像头，设置默认选中状态
     if (cameras.empty()) {
