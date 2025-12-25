@@ -452,6 +452,21 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/CameraWidget.cpp" line="383"/>
+        <source>删除选中的 %1 条记录</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/CameraWidget.cpp" line="389"/>
+        <source>确认删除</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/CameraWidget.cpp" line="389"/>
+        <source>确定要删除选中的扫码结果吗？</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../src/CameraWidget.cpp" line="412"/>
         <location filename="../src/CameraWidget.cpp" line="878"/>
         <source>摄像头就绪...</source>
