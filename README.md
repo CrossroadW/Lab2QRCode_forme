@@ -1,5 +1,7 @@
 # Lab2QRCode
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Mq-b/Lab2QRCode)
+
 **Lab2QRCode** 是一款支持 Windows、Linux 平台的工具，支持将**任意二进制或文本文件**转换为多种**条码图片**，以及将**条码图片**解码回原始文件。
 
 ![demo1](./images/demo1.png)
