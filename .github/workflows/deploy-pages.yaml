@@ -47,6 +47,25 @@ jobs:
         working-directory: qr-code-buddy
         run: npm run build -- --base=/Lab2QRCode/
 
+      - name: Debug - List build output
+        working-directory: qr-code-buddy
+        run: |
+          echo "=== Listing all directories ==="
+          ls -la
+          echo "=== Checking for common build directories ==="
+          if [ -d "dist" ]; then
+            echo "✅ dist directory exists"
+            ls -la dist/
+          fi
+          if [ -d "build" ]; then
+            echo "✅ build directory exists"
+            ls -la build/
+          fi
+          if [ -d ".vitepress/dist" ]; then
+            echo "✅ .vitepress/dist directory exists"
+            ls -la .vitepress/dist/
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
