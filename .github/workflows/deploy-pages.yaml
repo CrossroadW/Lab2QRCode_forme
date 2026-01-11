@@ -1,15 +1,15 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches:
+  push: 
+    branches: 
       - master  # 当推送到 master 分支时触发
   workflow_dispatch:  # 允许手动触发
 
 jobs:
   build-and-deploy:
     name: Build and Deploy to GitHub Pages
-    runs-on: ubuntu-latest
+    runs-on:  ubuntu-latest
     permissions:
       contents: write  # 允许写入 gh-pages 分支
     steps:
@@ -21,7 +21,7 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with:
+        with: 
           node-version: '20'
           cache: 'npm'
 
@@ -29,23 +29,19 @@ jobs:
         run: npm ci
 
       - name: Configure base path for GitHub Pages
-        run: |
-          # 修改 vite.config.js 中的 base 配置
-          sed -i "s|base: '/'|base: '/Lab2QRCode/'|g" vite.config.js || true
-          sed -i "s|base: \"\/\"|base: '/Lab2QRCode/'|g" vite.config.js || true
-          # 如果没有 base 配置，在 export default 后添加
-          if ! grep -q "base:" vite.config.js; then
-            sed -i "/export default defineConfig({/a \ \ base: '/Lab2QRCode/'," vite.config.js
-          fi
-          echo "=== vite.config.js after modification ==="
-          cat vite.config.js
+        run:  |
+          # 修改 vite.config.ts 中的 base 配置
+          # 在 export default defineConfig 的参数对象中添加 base 配置
+          sed -i "/export default defineConfig(({ mode }) => ({/a \ \ base: '/Lab2QRCode/'," vite.config.ts
+          echo "=== vite.config.ts after modification ==="
+          cat vite.config.ts
 
       - name: Build static site
         run: npm run build
 
       - name: Configure for GitHub Pages SPA
         run: |
-          # 创建 .nojekyll 文件（禁用 Jekyll 处理）
+          # 创建 . nojekyll 文件（禁用 Jekyll 处理）
           touch dist/.nojekyll
           # 复制 index.html 为 404.html（用于 SPA 路由回退）
           cp dist/index.html dist/404.html
@@ -56,6 +52,6 @@ jobs:
         with:
           target_branch: gh-pages  # 部署到 gh-pages 分支
           build_dir: dist  # 构建输出目录
-          repo: Mq-b/Lab2QRCode  # 部署到 Lab2QRCode 仓库
+          repo:  Mq-b/Lab2QRCode  # 部署到 Lab2QRCode 仓库
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用默认的 GITHUB_TOKEN
