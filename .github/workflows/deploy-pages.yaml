@@ -45,7 +45,7 @@ jobs:
 
       - name: Build static site
         working-directory: qr-code-buddy
-        run: npm run build
+        run: npm run build -- --base=/Lab2QRCode/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
