@@ -9,38 +9,71 @@
 using json = nlohmann::json;
 
 MqttConfig MqttSubscriber::loadMqttConfig(const std::string& filename) {
-    std::ifstream file(filename);
-    json config_json;
+    using json = nlohmann::json;
 
-    if (file.is_open()) {
-        file >> config_json;
-    }
+    MqttConfig config{};
+    json root;
 
-    spdlog::info("MQTT 配置文件: Host={}, Port={}, Client ID={}", config_json["mqtt"]["host"].dump(), config_json["mqtt"]["port"].dump(), config_json["mqtt"]["client_id"].dump());
-
-    MqttConfig config;
-    config.host = config_json["mqtt"]["host"];
-    config.port = config_json["mqtt"]["port"];
-
-    // 如果 client_id 不存在或为空，则生成并保存
-    if (!config_json.contains("mqtt") ||
-        !config_json["mqtt"].contains("client_id") ||
-        config_json["mqtt"]["client_id"].get<std::string>().empty()) {
-        
-        config.client_id = generate_client_id();
-        spdlog::info("client_id 不存在，生成ID: {}", config.client_id);
-        // 更新配置
-        config_json["mqtt"]["client_id"] = config.client_id;
-        std::ofstream out_file(filename);
-        if (out_file.is_open()) {
-            out_file << config_json.dump(4);
+    // 1) 读取文件（容错解析）
+    try {
+        std::ifstream ifs(filename);
+        if (ifs) {
+            ifs >> root;
+        } else {
+            spdlog::warn("无法打开配置文件: {}", filename);
         }
-    } else {
-        config.client_id = config_json["mqtt"]["client_id"];
+    } catch (const json::parse_error& e) {
+        spdlog::error("解析配置文件失败 ({}): {}", filename, e.what());
+    } catch (const std::exception& e) {
+        spdlog::error("读取配置文件异常 ({}): {}", filename, e.what());
     }
+
+    // 2) 取得 mqtt 节点（不存在则使用空对象）
+    json mqtt = root.value("mqtt", json::object());
+
+    // 3) 基本字段：使用默认值
+    config.host = mqtt.value("host", std::string("localhost"));
+    config.port = static_cast<uint16_t>(mqtt.value("port", 1883));
+
+    bool updated = false;
+
+    // 4) client_id：不存在或为空则生成
+    std::string client_id = mqtt.value("client_id", std::string{});
+    if (client_id.empty()) {
+        client_id = generate_client_id();
+        mqtt["client_id"] = client_id;
+        updated = true;
+        spdlog::info("client_id 不存在，生成ID: {}", client_id);
+    }
+    config.client_id = std::move(client_id);
+
+    // 5) topic：不存在或为空则设置默认
+    std::string topic = mqtt.value("topic", std::string{});
+    if (topic.empty()) {
+        topic = "test/topic";
+        mqtt["topic"] = topic;
+        updated = true;
+        spdlog::info("topic 不存在，设置默认 topic: {}", topic);
+    }
+    config.topic = std::move(topic);
+
+    // 6) 仅在有更新时写回
+    if (updated) {
+        root["mqtt"] = mqtt;
+        std::ofstream ofs(filename, std::ios::trunc);
+        if (ofs) {
+            ofs << root.dump(4);
+        } else {
+            spdlog::warn("无法打开配置文件以写入: {}", filename);
+        }
+    }
+
+    spdlog::info("MQTT 配置: Host={}, Port={}, ClientID={}, Topic={}",
+                 config.host, config.port, config.client_id, config.topic);
 
     return config;
 }
+
 
 std::string MqttSubscriber::generate_client_id(const std::string& app_name) {
     static boost::uuids::random_generator generator;
